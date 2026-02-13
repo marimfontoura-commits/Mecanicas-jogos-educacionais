@@ -1,0 +1,5 @@
+{
+  "name": "Interações.EDU",
+  "description": "Uma plataforma white-label para consulta e experimentação de mecânicas de jogos educacionais, com filtros por disciplina, segmento e tipo de interação.",
+  "requestFramePermissions": []
+}
