@@ -71,5 +71,25 @@ export const MECHANICS: Mechanic[] = [
     segments: [Segment.AI, Segment.AF],
     years: ['5º ano', '6º ano', '7º ano'],
     thumbnail: 'https://picsum.photos/seed/science-flow/400/300'
+  },
+  {
+    id: 'strategic-grouping',
+    title: 'Agrupamento Estratégico',
+    description: 'Selecione números que somem um valor alvo para combiná-los. Continue agrupando até restar apenas um número. Um desafiador jogo de lógica e soma!',
+    type: MechanicType.POINT_AND_CLICK,
+    discipline: Discipline.MATEMATICA,
+    segments: [Segment.AI, Segment.AF],
+    years: ['3º ano', '4º ano', '5º ano', '6º ano'],
+    thumbnail: 'https://picsum.photos/seed/math-grouping/400/300'
+  },
+  {
+    id: 'chromatic-defense',
+    title: 'Defesa Cromática',
+    description: 'Um tower defense educacional onde você defende contre inimigos coloridos usando a lógica de cores. Aprenda sobre teoria das cores enquanto joga!',
+    type: MechanicType.SEQUENCE,
+    discipline: Discipline.ARTES,
+    segments: [Segment.AF, Segment.EM],
+    years: ['8º ano', '9º ano', '1ª série'],
+    thumbnail: 'https://picsum.photos/seed/chromatic-defense/400/300'
   }
 ];

@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Defesa Cromática</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --panel: #f6f7f8;
+      --line: #d8dbe0;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --ok: #10b981;
+      --warn: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .app {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 16px;
+    }
+    .board, .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+    .board { padding: 16px; }
+    .panel { padding: 16px; background: var(--panel); }
+    .hud {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      font-size: 14px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #fff;
+    }
+    .path-wrap {
+      position: relative;
+      height: 320px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      overflow: visible;
+      background: linear-gradient(to bottom, #fff 0, #fff 50%, #fafafa 100%);
+    }
+    .path {
+      position: absolute;
+      left: 24px;
+      right: 140px;
+      top: 140px;
+      height: 28px;
+      background: #eceef1;
+      border: 1px solid #dde1e6;
+      border-radius: 20px;
+    }
+    .paper {
+      position: absolute;
+      right: 28px;
+      top: 170px;
+      width: 86px;
+      height: 90px;
+      border: 2px solid #cfd4dc;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #4b5563;
+      font-size: 12px;
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(148, 163, 184, 0.25);
+    }
+    .slot {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border: 2px solid #d1d5db;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #f9fafb;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-weight: 700;
+      color: #6b7280;
+      user-select: none;
+    }
+    .slot:hover { 
+      transform: translateY(-4px) scale(1.05); 
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+    .slot.has-tower {
+      border-color: #111827;
+      background: #f0f9ff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .tower {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #1f2937;
+      font-size: 14px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      color: #1f2937;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      animation: towerAppear .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes towerAppear {
+      from {
+        transform: scale(0.6) rotateZ(-10deg);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) rotateZ(0);
+        opacity: 1;
+      }
+    }
+    .range {
+      position: absolute;
+      top: 90px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 1px dashed #d1d5db;
+      opacity: .5;
+      pointer-events: none;
+    }
+    .ink {
+      position: absolute;
+      top: 119px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 0, 0, 0.15);
+      transition: opacity .2s, transform .2s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+    .ink.dead { 
+      opacity: 0; 
+      transform: scale(0) rotate(360deg);
+      animation: destroy .4s ease-out forwards;
+    }
+    @keyframes destroy {
+      0% {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2) rotate(180deg);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0) rotate(360deg);
+      }
+    }
+    .flash {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #3b82f6;
+      opacity: .8;
+      animation: pop .35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      pointer-events: none;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    }
+    @keyframes pop {
+      from { 
+        transform: scale(.5); 
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+      }
+      to { 
+        transform: scale(2.5); 
+        opacity: 0;
+        box-shadow: 0 0 24px rgba(59, 130, 246, 0);
+      }
+    }
+    .panel h1 { margin: 0 0 8px; font-size: 20px; }
+    .small { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .toolbar { margin: 14px 0; display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .tower-btn, .start {
+      border: 2px solid #d1d5db;
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-size: 14px;
+    }
+    .tower-btn {
+      display: grid;
+      place-items: center;
+      gap: 6px;
+    }
+    .tower-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: #6b7280;
+    }
+    .tower-btn[data-type="C"] { color: #0891b2; }
+    .tower-btn[data-type="M"] { color: #be185d; }
+    .tower-btn[data-type="Y"] { color: #ca8a04; }
+    .tower-btn[data-type="K"] { color: #4b5563; }
+    
+    .tower-btn.active { 
+      border-color: #1f2937;
+      background: #f0f9ff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), inset 0 0 12px rgba(59, 130, 246, 0.1);
+      transform: translateY(-2px);
+    }
+    .tower-btn.active::before {
+      content: '✓';
+      font-size: 12px;
+      color: #10b981;
+    }
+    .start {
+      width: 100%;
+      margin-top: 6px;
+      background: #111827;
+      color: #fff;
+      border-color: #111827;
+    }
+    .start:disabled { opacity: .4; cursor: not-allowed; }
+    .state { margin-top: 10px; font-size: 13px; }
+    .next-preview { margin: 10px 0; padding: 10px; border: 1px solid #d9dde3; border-radius: 10px; background: #fff; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="board">
+      <div class="hud">
+        <div class="chip" id="lives">Vidas: 10</div>
+        <div class="chip" id="phase">Fase: Ciano</div>
+        <div class="chip" id="wave">Onda: 1</div>
+        <div class="chip" id="kills">Eliminadas: 0</div>
+        <div class="chip" id="state">Estado: idle</div>
+      </div>
+      <div class="path-wrap" id="pathWrap">
+        <div class="path"></div>
+        <div class="paper">Papel</div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <h1>Defesa Cromática</h1>
+      <p class="small">Escolha 3 pigmentos (C, M, Y, K) para posicionar nas torres. Cores combinadas como Vermelho (M+Y), Verde (C+Y) e Marrom (M+Y+K) só serão eliminadas se você tiver os pigmentos corretos! 🎨</p>
+      <div class="next-preview" id="preview">Próxima unidade: -</div>
+      <div class="toolbar" id="toolbar"></div>
+      <button class="start" id="startBtn">Iniciar Onda</button>
+      <div class="state small" id="message">Selecione um pigmento (C, M, Y ou K) e clique em um slot para posicionar.</div>
+    </aside>
+  </div>
+
+  <script>
+    const COLOR_RULES = {
+      Ciano: ['C'],
+      Magenta: ['M'],
+      Amarelo: ['Y'],
+      Preto: ['K'],
+      Vermelho: ['M', 'Y'],
+      Verde: ['C', 'Y'],
+      Azul: ['C', 'M'],
+      Marrom: ['M', 'Y', 'K']
+    };
+
+    const TOWER_TYPES = ['C', 'M', 'Y', 'K'];
+    const INK_COLORS = {
+      C: '#06b6d4', M: '#ec4899', Y: '#f59e0b', K: '#6b7280',
+      Ciano: '#06b6d4', Magenta: '#ec4899', Amarelo: '#fbbf24', Preto: '#9ca3af',
+      Vermelho: '#ef4444', Verde: '#22c55e', Azul: '#3b82f6', Marrom: '#92400e'
+    };
+
+    const PHASES = [
+      {
+        id: 'ciano',
+        title: 'Ciano',
+        description: 'Identifique o pigmento base Ciano (C).',
+        waves: [
+          ['Ciano', 'Ciano', 'Ciano'],
+          ['Ciano', 'Ciano', 'Ciano', 'Ciano']
+        ]
+      },
+      {
+        id: 'magenta',
+        title: 'Magenta',
+        description: 'Observe as tintas alvo magenta e ajuste a torre correta.',
+        waves: [
+          ['Magenta', 'Magenta', 'Magenta'],
+          ['Magenta', 'Magenta', 'Magenta', 'Magenta']
+        ]
+      },
+      {
+        id: 'amarelo',
+        title: 'Amarelo',
+        description: 'Treine respostas rápidas com alvos amarelos.',
+        waves: [
+          ['Amarelo', 'Amarelo', 'Amarelo'],
+          ['Amarelo', 'Amarelo', 'Amarelo', 'Amarelo']
+        ]
+      },
+      {
+        id: 'misturas',
+        title: 'Misturas',
+        description: 'Combine pigmentos para eliminar cores secundárias e terciárias.',
+        waves: [
+          ['Vermelho', 'Verde', 'Azul'],
+          ['Vermelho', 'Verde', 'Azul', 'Marrom'],
+          ['Marrom', 'Verde', 'Vermelho', 'Azul', 'Marrom']
+        ]
+      }
+    ];
+
+    const game = {
+      state: 'idle',
+      lives: 10,
+      wave: 1,
+      kills: 0,
+      selectedTower: 'C',
+      slotCount: 4,
+      phaseIndex: 0,
+      phaseWaveIndex: 0,
+      slots: [],
+      towers: [],
+      units: [],
+      waveQueue: [],
+      pathStart: 20,
+      pathEnd: 0,
+      speed: 68,
+      lastTs: 0,
+      raf: 0
+    };
+
+    const els = {
+      pathWrap: document.getElementById('pathWrap'),
+      toolbar: document.getElementById('toolbar'),
+      preview: document.getElementById('preview'),
+      lives: document.getElementById('lives'),
+      phase: document.getElementById('phase'),
+      wave: document.getElementById('wave'),
+      kills: document.getElementById('kills'),
+      state: document.getElementById('state'),
+      message: document.getElementById('message'),
+      startBtn: document.getElementById('startBtn')
+    };
+
+    function setState(next) {
+      game.state = next;
+      els.state.textContent = `Estado: ${next}`;
+    }
+
+
+    function getCurrentPhase() {
+      return PHASES[game.phaseIndex] ?? null;
+    }
+
+    function setPhase(index) {
+      const next = PHASES[index];
+      if (!next) return;
+      game.phaseIndex = index;
+      game.phaseWaveIndex = 0;
+      game.wave = 1;
+      setState('placing');
+      els.startBtn.disabled = false;
+      els.message.textContent = `${next.description} Posicione as torres necessárias antes de iniciar.`;
+      updatePreview({ preserveState: true });
+      updateHud();
+    }
+
+    function createLayout() {
+      // Posições responsivas para 4 slots: 2 acima e 2 abaixo da trilha
+      const width = els.pathWrap.clientWidth;
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const safeRight = width - 180; // preserva espaço para o "papel"
+
+      const positions = [
+        { x: clamp(width * 0.22, 70, safeRight), y: 56 },  // topo esquerdo
+        { x: clamp(width * 0.55, 180, safeRight), y: 56 }, // topo direito
+        { x: clamp(width * 0.28, 90, safeRight), y: 210 }, // base esquerda
+        { x: clamp(width * 0.62, 200, safeRight), y: 210 } // base direita
+      ];
+
+      game.slots = Array.from({ length: game.slotCount }).map((_, i) => {
+        const { x, y } = positions[i];
+        const slotEl = document.createElement('button');
+        slotEl.className = 'slot';
+        slotEl.style.left = `${x - 25}px`;
+        slotEl.style.top = `${y}px`;
+        slotEl.textContent = '+';
+        slotEl.addEventListener('click', () => placeTower(i));
+        els.pathWrap.appendChild(slotEl);
+
+        const rangeEl = document.createElement('div');
+        rangeEl.className = 'range';
+        rangeEl.style.left = `${x - 75}px`;
+        rangeEl.style.top = `${y - 55}px`;
+        rangeEl.style.display = 'none';
+        els.pathWrap.appendChild(rangeEl);
+
+        return { x, tower: null, slotEl, rangeEl };
+      });
+      game.pathEnd = els.pathWrap.clientWidth - 150;
+    }
+
+    function renderToolbar() {
+      TOWER_TYPES.forEach(type => {
+        const b = document.createElement('button');
+        b.className = `tower-btn ${game.selectedTower === type ? 'active' : ''}`;
+        b.setAttribute('data-type', type);
+        b.textContent = type;
+        b.addEventListener('click', () => {
+          game.selectedTower = type;
+          [...els.toolbar.children].forEach(el => el.classList.remove('active'));
+          b.classList.add('active');
+          setState('placing');
+          els.message.textContent = `Pigmento ${type} selecionado. Clique em um slot para posicionar.`;
+        });
+        els.toolbar.appendChild(b);
+      });
+    }
+
+    function placeTower(slotIndex) {
+      if (!['idle', 'placing', 'wavePreview'].includes(game.state)) return;
+      const slot = game.slots[slotIndex];
+      slot.tower = game.selectedTower;
+      slot.slotEl.classList.add('has-tower');
+      slot.slotEl.innerHTML = `<div class="tower">${game.selectedTower}</div>`;
+      slot.rangeEl.style.display = 'block';
+      
+      // Feedback visual
+      showFlash(slot.x, 150);
+      
+      upsertTower(slotIndex, slot.x, game.selectedTower);
+      setState('placing');
+      els.message.textContent = `✓ Torre ${game.selectedTower} posicionada! Escolha mais torres ou inicie.`;
+      updatePreview();
+    }
+
+    function upsertTower(slotIndex, x, pigment) {
+      const found = game.towers.find(t => t.slotIndex === slotIndex);
+      if (found) found.pigment = pigment;
+      else game.towers.push({ id: `t-${slotIndex}`, slotIndex, x, pigment, range: 70 });
+    }
+
+    function generateWave() {
+      const phase = getCurrentPhase();
+      if (!phase) return [];
+      const pattern = phase.waves[game.phaseWaveIndex] ?? [];
+      return pattern.map(name => ({ name, required: COLOR_RULES[name] ?? [] }));
+    }
+
+    function updatePreview(options = {}) {
+      const { preserveState = false } = options;
+      const phase = getCurrentPhase();
+      if (!phase) {
+        game.waveQueue = [];
+        els.preview.textContent = 'Campanha concluída!';
+        els.message.textContent = 'Parabéns! Você dominou todas as fases.';
+        setState('completed');
+        return;
+      }
+
+      const wavePattern = generateWave();
+      game.waveQueue = wavePattern;
+      if (!wavePattern.length) {
+        els.preview.textContent = 'Fase concluída! Avance para a próxima.';
+        return;
+      }
+
+      const next = wavePattern[0];
+      els.preview.textContent = `Próxima unidade: ${next.name} [${next.required.join('+')}]`;
+
+      const placed = new Set(game.towers.map(t => t.pigment));
+      const missing = next.required.filter(req => !placed.has(req));
+      if (missing.length) {
+        const word = missing.length > 1 ? 'pigmentos' : 'pigmento';
+        els.message.textContent = `Falta ${word} ${missing.join(' e ')}. Ajuste suas torres antes de iniciar.`;
+        if (!preserveState) setState('placing');
+      } else if (!preserveState) {
+        setState('wavePreview');
+        els.message.textContent = `Tudo pronto para a onda ${game.phaseWaveIndex + 1}. Clique em "Iniciar Onda".`;
+      }
+
+      game.wave = game.phaseWaveIndex + 1;
+      updateHud();
+    }
+
+    function spawnUnits() {
+      game.units = game.waveQueue.map((u, i) => {
+        const el = document.createElement('div');
+        el.className = 'ink';
+        el.style.background = INK_COLORS[u.name];
+        el.style.left = `${game.pathStart - i * 40}px`;
+        els.pathWrap.appendChild(el);
+        return {
+          ...u,
+          x: game.pathStart - i * 40,
+          entered: false,
+          evaluated: false,
+          accumulated: new Set(),
+          currentlyInRange: new Set(),
+          el
+        };
+      });
+    }
+
+    function showFlash(x, y) {
+      const f = document.createElement('div');
+      f.className = 'flash';
+      f.style.left = `${x}px`;
+      f.style.top = `${y}px`;
+      els.pathWrap.appendChild(f);
+      setTimeout(() => f.remove(), 250);
+    }
+
+    function resolveUnit(unit, success) {
+      if (unit.evaluated) return;
+      unit.evaluated = true;
+      if (success) {
+        unit.el.classList.add('dead');
+        setTimeout(() => unit.el.remove(), 180);
+        game.kills += 1;
+      } else {
+        unit.el.classList.add('dead');
+        unit.el.remove();
+      }
+    }
+
+    function updateUnits(dt) {
+      for (const unit of game.units) {
+        if (unit.evaluated) continue;
+        unit.x += game.speed * dt;
+        unit.el.style.left = `${unit.x}px`;
+
+        const inRangeNow = game.towers.filter(t => Math.abs(unit.x - t.x) <= t.range);
+        const prevRange = new Set(unit.currentlyInRange);
+        unit.currentlyInRange = new Set(inRangeNow.map(t => t.id));
+
+        if (inRangeNow.length) {
+          unit.entered = true;
+          inRangeNow.forEach(t => {
+            unit.accumulated.add(t.pigment);
+            if (!prevRange.has(t.id)) showFlash(unit.x + 8, 124);
+          });
+        }
+
+        const success = unit.required.every(req => unit.accumulated.has(req));
+        if (success) {
+          resolveUnit(unit, true);
+          continue;
+        }
+
+        if (unit.x >= game.pathEnd) {
+          resolveUnit(unit, success);
+          if (!success) game.lives -= 1;
+        }
+      }
+
+      game.units = game.units.filter(u => !u.evaluated);
+    }
+
+    function updateHud() {
+      els.lives.textContent = `Vidas: ${game.lives}`;
+      const phase = getCurrentPhase();
+      if (phase) {
+        const waveNumber = Math.min(game.phaseWaveIndex + 1, phase.waves.length);
+        els.wave.textContent = `Onda: ${waveNumber} / ${phase.waves.length}`;
+        els.phase.textContent = `Fase: ${phase.title}`;
+      } else {
+        els.wave.textContent = 'Onda: -';
+        els.phase.textContent = 'Fase: Completa';
+      }
+      els.kills.textContent = `Eliminadas: ${game.kills}`;
+    }
+
+    function finishWaveIfNeeded() {
+      const alive = [...els.pathWrap.querySelectorAll('.ink')].length;
+      if (alive === 0) {
+        if (game.lives <= 0) {
+          setState('gameOver');
+          els.message.textContent = 'Game Over: o papel foi saturado.';
+          els.startBtn.disabled = true;
+          cancelAnimationFrame(game.raf);
+          return;
+        }
+        const currentPhase = getCurrentPhase();
+        game.phaseWaveIndex += 1;
+        if (currentPhase && game.phaseWaveIndex < currentPhase.waves.length) {
+          setState('placing');
+          els.message.textContent = 'Onda concluída! Ajuste suas torres para a próxima.';
+          updatePreview({ preserveState: true });
+          updateHud();
+        } else if (game.phaseIndex < PHASES.length - 1) {
+          setPhase(game.phaseIndex + 1);
+        } else {
+          game.phaseIndex = PHASES.length;
+          game.waveQueue = [];
+          updatePreview({ preserveState: true });
+          els.startBtn.disabled = true;
+          updateHud();
+        }
+      }
+    }
+
+    function loop(ts) {
+      if (!game.lastTs) game.lastTs = ts;
+      const dt = (ts - game.lastTs) / 1000;
+      game.lastTs = ts;
+      if (game.state === 'waveRunning') {
+        updateUnits(dt);
+        updateHud();
+        finishWaveIfNeeded();
+      }
+      game.raf = requestAnimationFrame(loop);
+    }
+
+    function startWave() {
+      if (!game.towers.length || game.state === 'waveRunning' || game.state === 'gameOver') return;
+      const phase = getCurrentPhase();
+      if (!phase || game.phaseWaveIndex >= phase.waves.length) return;
+      if (!game.waveQueue.length) {
+        updatePreview();
+        if (!game.waveQueue.length) return;
+      }
+      const required = new Set(game.waveQueue.flatMap(u => u.required));
+      const placed = new Set(game.towers.map(t => t.pigment));
+      for (const pigment of required) {
+        if (!placed.has(pigment)) {
+          els.message.textContent = `Ainda falta o pigmento ${pigment} nas torres.`;
+          setState('placing');
+          return;
+        }
+      }
+      [...els.pathWrap.querySelectorAll('.ink,.flash')].forEach(n => n.remove());
+      spawnUnits();
+      setState('waveRunning');
+      els.message.textContent = 'Onda em andamento...';
+    }
+
+    function init() {
+      createLayout();
+      renderToolbar();
+      setPhase(0);
+      updateHud();
+      els.startBtn.addEventListener('click', startWave);
+      game.raf = requestAnimationFrame(loop);
+      window.addEventListener('beforeunload', () => cancelAnimationFrame(game.raf));
+    }
+
+    init();
+  </script>
+</body>
+</html>

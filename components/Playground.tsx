@@ -8,6 +8,8 @@ import ColorTheory from './mechanics/ColorTheory';
 import GeographyBasin from './mechanics/GeographyBasin';
 import ScienceTrophicLevels from './mechanics/ScienceTrophicLevels';
 import CreativeWriting from './mechanics/CreativeWriting';
+import StrategicGrouping from './mechanics/StrategicGrouping';
+import ChromaticDefense from './mechanics/ChromaticDefense';
 import { X, Info, Palette, Zap, Map as MapIcon, Layers, BookOpen, Activity } from 'lucide-react';
 
 interface Props {
@@ -19,6 +21,7 @@ const Playground: React.FC<Props> = ({ mechanic, onClose }) => {
   const [colorMode, setColorMode] = useState<'CMYK' | 'RGB'>('CMYK');
   const [geoLevel, setGeoLevel] = useState<1 | 2>(1);
   const [scienceLevel, setScienceLevel] = useState<1 | 2>(1);
+  const [groupingPhase, setGroupingPhase] = useState<1 | 2>(1);
 
   const renderDemo = () => {
     switch (mechanic.id) {
@@ -36,6 +39,10 @@ const Playground: React.FC<Props> = ({ mechanic, onClose }) => {
         return <GeographyBasin level={geoLevel} />;
       case 'science-trophic':
         return <ScienceTrophicLevels level={scienceLevel} />;
+      case 'strategic-grouping':
+        return <StrategicGrouping phase={groupingPhase} />;
+      case 'chromatic-defense':
+        return <ChromaticDefense />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-64 bg-white rounded-xl border border-slate-200 w-full max-w-md mx-auto mt-20">
@@ -114,6 +121,20 @@ const Playground: React.FC<Props> = ({ mechanic, onClose }) => {
                     </button>
                     <button onClick={() => setScienceLevel(2)} className={`flex-1 flex items-center justify-center gap-2 py-3 text-caption font-semibold rounded-lg transition-all ${scienceLevel === 2 ? 'bg-green-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>
                       <Activity className="w-4 h-4" /> 4º Nível
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {mechanic.id === 'strategic-grouping' && (
+                <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+                  <span className="text-overline text-slate-500 mb-4 font-semibold block">Fase de Operação</span>
+                  <div className="flex bg-white border border-slate-200 p-2 rounded-xl gap-2 shadow-sm">
+                    <button onClick={() => setGroupingPhase(1)} className={`flex-1 flex items-center justify-center gap-2 py-3 text-caption font-semibold rounded-lg transition-all ${groupingPhase === 1 ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>
+                      <Zap className="w-4 h-4" /> SOMA
+                    </button>
+                    <button onClick={() => setGroupingPhase(2)} className={`flex-1 flex items-center justify-center gap-2 py-3 text-caption font-semibold rounded-lg transition-all ${groupingPhase === 2 ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>
+                      <Activity className="w-4 h-4" /> ANULAÇÃO
                     </button>
                   </div>
                 </div>

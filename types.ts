@@ -22,7 +22,8 @@ export enum MechanicType {
   MEMORY = 'Jogo da Memória',
   SORTING = 'Classificação',
   SEQUENCE = 'Ordenação',
-  CREATIVE = 'Criação / Escrita'
+  CREATIVE = 'Criação / Escrita',
+  POINT_AND_CLICK = 'Point and Click'
 }
 
 export interface Mechanic {
